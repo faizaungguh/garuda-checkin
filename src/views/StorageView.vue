@@ -15,6 +15,12 @@ onMounted(() => {
   countData()
 })
 
+// src/views/StorageView.vue
+
+// src/views/StorageView.vue (Bagian handleFileUpload)
+
+// src/views/StorageView.vue
+
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
   if (!file) return
@@ -25,27 +31,69 @@ const handleFileUpload = (event) => {
   Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
-    dynamicTyping: true,
+    // 1. PEMBERSIH HEADER (Anti-BOM & Anti-Spasi)
+    // Ini menjamin kolom 'email' terbaca meskipun ada karakter aneh
+    transformHeader: (header) => {
+      return header.trim().toLowerCase().replace(/^\ufeff/, "")
+    },
     complete: async (results) => {
-      const data = results.data
+      const rawData = results.data
 
-      if (!data.length || !data[0].id) {
-        alert('Format CSV salah! Pastikan ada kolom "id" (kode tiket).')
+      // Debug: Lihat baris pertama di Console (F12)
+      console.log("Data Mentah Baris 1:", rawData[0])
+
+      if (!rawData.length) {
+        alert('File CSV kosong!')
         isImporting.value = false
         return
       }
 
-      importStatus.value = `Menyimpan ${data.length} data ke database...`
+      // 2. MAPPING & KONVERSI DATA
+      const cleanData = rawData.map(row => {
+        // Ambil status raw (bisa angka 0, 1 atau string "0", "1")
+        const rawStatus = row.ischeckedin;
+
+        // LOGIKA 0 dan 1:
+        // Jika isinya "1" -> True (Sudah Masuk)
+        // Selain itu ("0", kosong, dll) -> False (Belum Masuk)
+        const isCheckedInBool = String(rawStatus).trim() === '1';
+
+        return {
+          // Pastikan ID jadi String biar konsisten saat dicari
+          id: String(row.id || row['kode tiket'] || ''),
+
+          // Ambil email (fallback ke string kosong biar ga error)
+          email: row.email || '',
+
+          fullname: row.fullname || '',
+          category: row.category || '',
+          tribune: row.tribune || '',
+
+          // Pastikan Gate jadi String ("2", "3") biar cocok sama Dropdown
+          gate: String(row.gate || ''),
+
+          // SIMPAN KE DATABASE SEBAGAI BOOLEAN (True/False)
+          // Biar logika di Home gampang
+          isCheckedIn: isCheckedInBool
+        }
+      })
 
       try {
-        await db.participants.bulkPut(data)
+        // Reset Database Lama
+        await db.participants.clear()
+
+        // Masukkan Data Baru
+        await db.participants.bulkPut(cleanData)
+
+        // Update UI
+        await countData()
 
         importStatus.value = 'Selesai!'
-        alert(`Berhasil mengimpor ${data.length} peserta!`)
+        alert(`Sukses! ${cleanData.length} data berhasil diimport.`)
 
+        // Reset input file
         event.target.value = null
 
-        await countData()
       } catch (error) {
         console.error(error)
         alert('Gagal menyimpan ke database: ' + error.message)
@@ -54,7 +102,7 @@ const handleFileUpload = (event) => {
       }
     },
     error: (err) => {
-      alert('Gagal membaca file: ' + err.message)
+      alert('Gagal parsing CSV: ' + err.message)
       isImporting.value = false
     }
   })

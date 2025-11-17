@@ -5,6 +5,7 @@ import { db } from '../db'
 import logo from '@/assets/icon-garuda-01-circle.svg'
 import { ArrowDownTrayIcon, QrCodeIcon } from '@heroicons/vue/24/outline'
 import QrScanner from '../components/QrScanner.vue'
+import CheckinResult from '../components/CheckinResult.vue'
 
 const router = useRouter()
 
@@ -12,6 +13,11 @@ const isLoading = ref(true)
 const hasData = ref(false)
 const totalData = ref(0)
 const isScanning = ref(false)
+
+const showResult = ref(false)
+const resultStatus = ref('')
+const resultMessage = ref('')
+const resultData = ref(null)
 
 const gates = ref([])
 const selectedGate = ref(localStorage.getItem('selectedGate') || '')
@@ -57,9 +63,56 @@ const goToImport = () => {
 const onScanResult = async (ticketId) => {
   isScanning.value = false
 
-  alert(`Berhasil Scan! ID Tiket: ${ticketId}`)
-  console.log("ID:", ticketId)
+  try {
+    const participant = await db.participants.get(String(ticketId))
+
+    console.log("Hasil Scan ID:", ticketId, "Data:", participant)
+
+    if (!participant) {
+      resultStatus.value = 'error'
+      resultMessage.value = `Tiket ID "${ticketId}" tidak terdaftar.`
+      resultData.value = null
+      showResult.value = true
+      return
+    }
+
+    resultData.value = participant
+
+    if (participant.isCheckedIn) {
+      resultStatus.value = 'already'
+      resultMessage.value = `Peserta atas nama ${participant.fullname} SUDAH masuk sebelumnya.`
+      showResult.value = true
+      return
+    }
+
+
+
+    if (String(participant.gate) !== String(selectedGate.value)) {
+      resultStatus.value = 'warning'
+      resultMessage.value = `Salah Gerbang! Tiket ini untuk Gate ${participant.gate}, bukan Gate ${selectedGate.value}.`
+      showResult.value = true
+      return
+    }
+
+    await db.participants.update(participant.id, {
+      isCheckedIn: true,
+      checkinTime: new Date().toISOString()
+    })
+
+    participant.isCheckedIn = true
+
+    resultStatus.value = 'success'
+    resultMessage.value = 'Data Valid. Silakan Masuk.'
+    showResult.value = true
+
+  } catch (err) {
+    console.error("Error Scan:", err)
+    alert("Terjadi kesalahan sistem database.")
+  }
 }
+
+const closeResult = () => {
+  showResult.value = false
 </script>
 
 <template>
@@ -133,6 +186,11 @@ const onScanResult = async (ticketId) => {
     </div>
     <transition name="fade">
       <QrScanner v-if="isScanning" @result="onScanResult" @close="isScanning = false" />
+    </transition>
+
+    <transition name="fade">
+      <CheckinResult v-if="showResult" :status="resultStatus" :message="resultMessage" :participant="resultData"
+        @close="closeResult" />
     </transition>
   </div>
 </template>
