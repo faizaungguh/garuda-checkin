@@ -1,8 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import Splash from "../views/Splash.vue";
-import Search from "../views/Search.vue";
-import ScanQr from "../views/ScanQr.vue";
+import SplashView from "../views/SplashView.vue";
+import HomeView from "../views/HomeView.vue";
+import SearchView from "../views/SearchView.vue";
+import StorageView from "../views/StorageView.vue";
 
 const routes = [
   {
@@ -11,14 +12,19 @@ const routes = [
     component: SplashView,
   },
   {
-    path: "/search",
-    name: "Search",
-    component: SplashView,
+    path: "/home",
+    name: "Home",
+    component: HomeView,
   },
   {
-    path: "/scan-qr",
-    name: "ScanQr",
-    component: SplashView,
+    path: "/search",
+    name: "Search",
+    component: SearchView,
+  },
+  {
+    path: "/storage",
+    name: "Storage",
+    component: StorageView,
   },
 ];
 
