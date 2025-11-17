@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import SplashView from "../views/SplashView.vue";
-import HomeView from "../views/HomeView.vue";
-import SearchView from "../views/SearchView.vue";
-import StorageView from "../views/StorageView.vue";
+import SplashView from "@/views/SplashView.vue";
+import HomeView from "@/views/HomeView.vue";
+import SearchView from "@/views/SearchView.vue";
+import StorageView from "@/views/StorageView.vue";
 
 const routes = [
   {

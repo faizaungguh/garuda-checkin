@@ -1,11 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { db } from '../db'
+import { db } from '@/db'
 import logo from '@/assets/icon-garuda-01-circle.svg'
 import { ArrowDownTrayIcon, QrCodeIcon } from '@heroicons/vue/24/outline'
-import QrScanner from '../components/QrScanner.vue'
-import CheckinResult from '../components/CheckinResult.vue'
+import QrScanner from '@/components/QrScanner.vue'
+import CheckinResult from '@/components/CheckinResult.vue'
 
 const router = useRouter()
 
@@ -113,6 +113,7 @@ const onScanResult = async (ticketId) => {
 
 const closeResult = () => {
   showResult.value = false
+}
 </script>
 
 <template>
